@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+<title>Pie Chart Example - GitHub Page</title>
+
+<style type="text/css">
+/* none of this will stop the script working and is just for our own layout purposes */
+* {
+    font-family: Arial;
+}
+table {
+    margin-left: 10px;
+    /* border-collapse: collapse; */
+}
+td {
+    padding: 5px;
+    border: 1px solid black;
+}
+canvas {
+    float: left;
+}
+</style>
+
+</head>
+<body>
+
+<canvas id="canvas" width="300" height="300"></canvas>
+<table id="mydata">
+    <tr>
+        <th>Lang</th>
+        <th>Value</th>
+    </tr>
+    <tr>
+        <td><a href="javascript:activeSegment=(activeSegment==0?99:0);redrawGraph();">JavaScript</a></td>
+        <td>100</td>
+    </tr>
+    <tr>
+        <td><a href="javascript:activeSegment=(activeSegment==1?99:1);redrawGraph();">CSS</a></td>
+        <td>200</td>
+    </tr>
+    <tr>
+        <td><a href="javascript:activeSegment=(activeSegment==2?99:2);redrawGraph();">HTML</a></td>
+        <td>300</td>
+    </tr>
+    <tr>
+        <td><a href="javascript:activeSegment=(activeSegment==3?99:3);redrawGraph();">PHP</a></td>
+        <td>50</td>
+    </tr>
+    <tr>
+        <td><a href="javascript:activeSegment=(activeSegment==4?99:4);redrawGraph();">MySQL</a></td>
+        <td>30</td>
+    </tr>
+    <tr>
+        <td><a href="javascript:activeSegment=(activeSegment==5?99:5);redrawGraph();">Apache</a></td>
+        <td>10</td>
+    </tr>
+    <tr>
+        <td><a href="javascript:activeSegment=(activeSegment==6?99:6);redrawGraph();">Linux</a></td>
+        <td>30</td>
+    </tr>
+</table>
+<script type="text/javascript" src="pie.js"></script>
+</body>
+</html>
