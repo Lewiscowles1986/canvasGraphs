@@ -1,87 +1,142 @@
-    window.activeSegment = 99;
-    window.redrawGraph = function () { //keep the global space clean
-        ///// STEP 0 - setup
-
-        // source data table and canvas tag
-        var data_table = document.getElementById('mydata');
-        var canvas = document.getElementById('canvas');
-        var td_index = 1; // which TD contains the data
-
-        ///// STEP 1 - Get the, get the, get the data!
-
-        // get the data[] from the table
-        var tds, data = [],
-            color, colors = [],
-            value = 0,
-            total = 0;
-        var trs = data_table.getElementsByTagName('tr'); // all TRs
-        var tableHeaderHeight = parseInt(getComputedStyle(trs[0])['height'].replace('px'), 10);
-        canvas.style.height = (parseInt(getComputedStyle(data_table)['height'].replace('px'), 10) - tableHeaderHeight) + 'px';
-        canvas.style.marginTop = (tableHeaderHeight + 2) + 'px';
+window.CD2 = window.CD2 || {};
+window.CD2.UI = window.CD2.UI || {};
+window.CD2.UI.chart = window.CD2.UI.chart || {};
+window.CD2.UI.charts = window.CD2.UI.charts || {};
+window.CD2.UI.charts.barChart = function(elem, options) {
+    options = ((typeof options == 'object') ? options : {});
+    var _elem = elem;
+    var tds, data = [],
+        color, colors = [],
+        value = 0, total = 0,
+        activeSegment = 99,
+        maxBarHeight = 0,
+        depth = ( options.depth || ( ( options.threeD || false ) ? 10 : 0 ) ),
+        ctx,
+        border = ( options.border || false ),
+        pallette = {
+            'light': [
+                '#1abc9c',
+                '#2ecc71',
+                '#3498db',
+                '#9b59b6',
+                '#f1c40f',
+                '#e67e22',
+                '#e74c3c',
+                'rgb(216, 123, 209)',
+                '#999999'
+            ],
+            'dark': [
+                'rgb(22, 154, 128)',
+                'rgb(39, 172, 95)',
+                'rgb(44, 128, 184)',
+                'rgb(130, 78, 151)',
+                'rgb(224, 183, 16)',
+                'rgb(201, 110, 29)',
+                'rgb(197, 66, 52)',
+                'rgb(167, 95, 161)',
+                '#666666'
+            ]
+        };
+    var canvas = document.createElement('canvas');
+    
+    var getColor = function(i) {
+        return pallette.light[i];
+    };
+    var getDarkColor = function(i) {
+        return pallette.dark[i];
+    };
+    var getHeight = function( elem ) {
+        return parseInt( getComputedStyle( elem )['height'].replace('px'), 10);
+    };
+    var getWidth = function( elem ) {
+        isCanvasFW = ( (elem.nodeName.toLowerCase() == 'canvas') && (elem.style.width == '100%') );
+        isParentBody = ( elem.parentNode.nodeName.toLowerCase() == 'body' );
+        return (isCanvasFW ? ( isParentBody ? window.innerWidth : elem.parentNode.width ) : elem.width );
+    };
+    var init = function() {
+        var tableHeaderHeight = getHeight( _elem.getElementsByTagName('tr')[0] ),
+            canvasHeight = ( getHeight( _elem ) - tableHeaderHeight ) - 4;
+        
+        canvas.style.height =  canvasHeight + 'px';
+        canvas.style.width = options.width || '100%';
+        _elem.parentNode.insertBefore( canvas, _elem );
+        canvas.width = getWidth(canvas);
+        ctx = canvas.getContext('2d');
+    };
+    var getTableRows = function() {
+        return _elem.getElementsByTagName('tr');
+    };
+    var getData = function() {
+        var trs = getTableRows();
         for (var i = 0; i < trs.length; i++) {
-            tds = trs[i].getElementsByTagName('td'); // all TDs
-
-            if (tds.length === 0) continue; //  no TDs here, move on
+            var tds = trs[i].getElementsByTagName('td'); // get all cols
+            if (tds.length < 2) continue; // skip header or blank rows
 
             // get the value, update total
-            value = parseFloat(tds[td_index].innerHTML);
+            value = parseFloat(tds[tds.length-1].innerHTML);
             data[data.length] = value;
+            maxBarHeight = Math.max( maxBarHeight, value );
             total += value;
-
-            // random color
-            color = getColor(i);
-            trs[i].style.backgroundColor = color; // color this TR
         }
-
-
-        ///// STEP 2 - Draw pie on canvas
-
-
-        // exit if canvas is not supported
+        return data;
+    }
+    this.setTableVisibility = function(vis) {
+        _elem.style.display = vis ? '' : 'none';
+    }
+    this.redraw = function(data) {
         if (typeof canvas.getContext === 'undefined') {
             return;
         }
-
-        // get canvas context, determine radius and center
-        var ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        var canvas_size = [canvas.width, canvas.height];
-        //var radius = (Math.min(canvas_size[0], canvas_size[1]) / 2) * .95;
-        //var center = [canvas_size[0] / 2, canvas_size[1] / 2];
-
-        var sofar = 0; // keep track of progress
-        // loop the data[]
         
-        var elemWidth = (canvas.width / (trs.length-1) );
-        var spacing = 0;
-        for (var i = 0; i < trs.length; i++) { // for (var piece in data) {
+        var canvas_size = [getWidth(canvas), canvas.height],
+            sofar = 0, // keep track of progress
+            elemWidth = (((canvas_size[0]-1)-depth) / (data.length) ),
+            spacing = 0,
+            yScale = 1,
+            trs = getTableRows();
+        console.log(canvas_size);
+        ctx.clearRect(0, 0, canvas_size[0], canvas_size[1]);
+        if(((maxBarHeight/total)*canvas.height) >= canvas.height) {
+            while( ( (((maxBarHeight/total)*canvas.height) >= canvas.height) * yScale ) >= canvas.height) {
+                yScale -= 0.025;
+            }
+        } else {
+            yScale = Math.max( ( ( ( ( ( canvas.height * (maxBarHeight / total) ) - depth) ) / 100 ) +1 ), 1);
+        }
+        
+        for (var i = 0; i < data.length; i++) { // for (var piece in data) {
 
             var thisvalue = data[i] / total;
             
             var xMin = ((i)*elemWidth);
-            
-            ctx.lineStyle = 'black';
-            ctx.fillStyle = getColor(i + 1) // trs[piece].style.backgroundColor // color
-            ctx.fillRect(xMin,(canvas.height-6),(elemWidth-spacing),-(thisvalue*canvas.height) );
-            ctx.lineWidth = '1'
-            ctx.strokeRect(xMin,(canvas.height-6),(elemWidth-spacing),-(thisvalue*canvas.height) );
+            if(depth > 0) { // 3D Rendering
+                for(n=depth;n>0;n--) {
+                    ctx.fillStyle = getDarkColor(i);
+                    ctx.fillRect(xMin+n,(canvas.height)-n,(elemWidth-spacing),-((thisvalue*canvas.height)*yScale) );
+                }
+            }
+            ctx.fillStyle = getColor(i);
+            ctx.fillRect(xMin,(canvas.height),(elemWidth-spacing),-((thisvalue*canvas.height)*yScale) );
+            if(depth <= 0 && border) {
+                ctx.strokeStyle = border.color || border;
+                ctx.lineWidth = border.width || '1';
+                ctx.strokeRect(xMin,(canvas.height),(elemWidth-spacing),-(thisvalue*canvas.height)*yScale );
+            }
 
             sofar += thisvalue; // increment progress tracker
+            
+            // random color
+            color = getColor(i);
+            trs[ i+1 ].style.backgroundColor = color; // color this TR
         }
+    }
+    init();
+    this.redraw(getData());
+};
 
-
-        ///// DONE!
-
-
-        function getColor(i) {
-            var pallete = Array(
-                '#1abc9c', '#2ecc71', '#3498db', '#9b59b6',
-                '#f1c40f', '#e67e22', '#e74c3c', '#16a085',
-                '#c0392b', '#d35400', '#f39c12');
-            return pallete[i];
-        }
-
-        data_table.style.transform = 'scale(0.1);';
-
-    };
-    redrawGraph();
+new window.CD2.UI.charts.barChart( document.getElementById('data1'), {} ).setTableVisibility(false);
+new window.CD2.UI.charts.barChart( document.getElementById('data1'), {border:1} );
+new window.CD2.UI.charts.barChart( document.getElementById('data1'), {border:{color:'#ff0000',width:5}} );
+new window.CD2.UI.charts.barChart( document.getElementById('data1'), {depth:5,border:{color:'#ff0000',width:5}} );
+new window.CD2.UI.charts.barChart( document.getElementById('data1'), {threeD:true,border:{color:'#ff0000',width:5}} );
+// {depth:5,border:{color:'#ff0000',width:5}}
