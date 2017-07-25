@@ -56,7 +56,7 @@ window.CD2.utils.getElemsViaCSS = function(selector, elem) {
     canvas.id = (diag.id || "") + "_diag_" + idx;
     canvas.width = 800;
     canvas.height = 600;
-    document.body.appendChild(canvas); 
+    document.body.replaceChild(canvas, diag); 
       
     
     (function(tableData, canvas){      
@@ -72,7 +72,6 @@ window.CD2.utils.getElemsViaCSS = function(selector, elem) {
       let bar = (function() {
         let spacing = 0;
         let elemHeight = (canvas.height / (tableData.items) ); // height of each bar
-        let sofar = 0; // keep track of progress
         
         tableData.values.forEach(function(val, i) {
           let thisvalue = parseFloat(val.value, 10) / tableData.total;
@@ -83,15 +82,12 @@ window.CD2.utils.getElemsViaCSS = function(selector, elem) {
           ctx.fillRect(6, yMin, (thisvalue * canvas.width), (elemHeight - spacing) );
           ctx.lineWidth = '1'
           ctx.strokeRect(6, yMin, (thisvalue * canvas.width), (elemHeight - spacing) );
-
-          sofar += thisvalue;
         });
       });
       
       let column = (function() {
         let spacing = 0;
         let elemWidth = (canvas.width / (tableData.items) ); // height of each bar
-        let sofar = 0; // keep track of progress
         
         tableData.values.forEach(function(val, i) {
           let thisvalue = parseFloat(val.value, 10) / tableData.total;
@@ -102,8 +98,6 @@ window.CD2.utils.getElemsViaCSS = function(selector, elem) {
           ctx.fillRect(xMin, (canvas.height-6), (elemWidth - spacing), -(thisvalue * canvas.height) );
           ctx.lineWidth = '1'
           ctx.strokeRect(xMin, (canvas.height-6), (elemWidth - spacing), -(thisvalue * canvas.height) );
-
-          sofar += thisvalue;
         });
       });
       
@@ -111,7 +105,7 @@ window.CD2.utils.getElemsViaCSS = function(selector, elem) {
         let radius = (Math.min(canvas.width, canvas.height) / 2) * .95;
         let center = [canvas.width / 2, canvas.height / 2]; 
 
-        let sofar = 0; // keep track of progress
+        let rotation = 0; // keep track of progress
 
         tableData.values.forEach(function(val, i) {
           let thisvalue = parseFloat(val.value, 10) / tableData.total;
@@ -122,8 +116,8 @@ window.CD2.utils.getElemsViaCSS = function(selector, elem) {
             center[0],
             center[1],
             radius,
-            Math.PI * (-0.5 + 2 * sofar), // -0.5 sets set the start to be top
-            Math.PI * (-0.5 + 2 * (sofar + thisvalue)),
+            Math.PI * (-0.5 + 2 * rotation), // -0.5 sets set the start to be top
+            Math.PI * (-0.5 + 2 * (rotation + thisvalue)),
             false
           );
 
@@ -134,11 +128,21 @@ window.CD2.utils.getElemsViaCSS = function(selector, elem) {
           ctx.lineWidth = '1'
           ctx.stroke(); 
 
-          sofar += thisvalue; // increment progress tracker
+          rotation += thisvalue; // increment progress tracker
         });
       });
       
-      column();
+      let chartType = diag.getAttribute('data-chart-type') || 'pie';
+      switch(chartType) {
+          case 'column':
+              column();
+              break;
+          case 'bar':
+              bar();
+              break;
+          default:
+              pie();
+      }
     })(tableData, canvas);
     // console.log(tableData);
   }); // done processing every table
