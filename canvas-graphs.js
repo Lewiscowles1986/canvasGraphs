@@ -54,9 +54,12 @@ window.CD2.utils.getElemsViaCSS = function(selector, elem) {
     // call to drawTable passing in tableData
     let canvas = document.createElement("canvas");
     canvas.id = (diag.id || "") + "_diag_" + idx;
-    canvas.width = 800;
-    canvas.height = 600;
-    document.body.replaceChild(canvas, diag); 
+    canvas.width = parseFloat(getComputedStyle(diag)['width'].replace('px'),10) || 800;
+    canvas.height = parseFloat(getComputedStyle(diag)['height'].replace('px'),10) || 600;
+    
+    diag.parentNode.insertBefore(canvas, diag); // insert before table
+    // diag.parentNode.insertBefore(canvas, diag.nextSibling); // insert after table
+    // document.body.replaceChild(canvas, diag); // replace table
       
     
     (function(tableData, canvas){      
